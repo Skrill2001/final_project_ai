@@ -1,7 +1,7 @@
 # NOTE: use absolute path, modify according to your setting
-DATA_DIR="/data2/final_project_data/30h_data"
-TOKENIZER_PATH="/data2/final_project_data/spm1000/spm_unigram1000.model"
-PRETRAIN_PATH="/data2/final_project_ckpt/pretrained_model.pth"
+DATA_DIR="/cpfs02/user/housiyuan/project/final_project_ai/final_project_data/30h_data"
+TOKENIZER_PATH="/cpfs02/user/housiyuan/project/final_project_ai/final_project_data/spm1000/spm_unigram1000.model"
+PRETRAIN_PATH="/cpfs02/user/housiyuan/project/final_project_ai/final_project_ckpt/pretrained_model.pth"
 
 export PYTHONPATH=./:$PYTHONPATH
 python -u main.py --config-dir configs/ \

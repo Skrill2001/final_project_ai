@@ -23,7 +23,7 @@ import utils
 logger = logging.getLogger(__name__)
 
 
-def load_audio_visual(manifest_path, max_keep, min_keep, frame_rate, label_paths, label_rates, tol=0.1):
+def load_audio_visual(manifest_path, max_keep, min_keep, frame_rate, label_paths, label_rates, path_prefix, tol=0.1):
     def is_audio_label_aligned(audio_dur, label_durs):
         return all([abs(audio_dur - label_dur)<tol for label_dur in label_durs])
 
@@ -48,8 +48,8 @@ def load_audio_visual(manifest_path, max_keep, min_keep, frame_rate, label_paths
             elif (not is_seq_label) and (not is_audio_label_aligned(sz/frame_rate, dur_from_label_list[ind])):
                 n_unaligned += 1
             else:
-                video_path = items[1]
-                audio_path = items[2]
+                video_path = items[1].replace("/data2", path_prefix)
+                audio_path = items[2].replace("/data2", path_prefix)
                 audio_id = items[0]
                 names.append((video_path, audio_path+':'+audio_id))
                 inds.append(ind)
@@ -144,13 +144,15 @@ class AudioVideoDataset(FairseqDataset):
         label_path = f"{self.get_label_dir()}/{split}.{self.cfg.labels[0]}"
         self.label_rate = self.cfg.label_rate
         manifest_path = f"{self.cfg.data}/{split}.tsv"
+        self.data_path_prefix = self.cfg.data.partition("/final_project_data/")[0]
         self.audio_root, self.names, inds, tot, self.sizes = load_audio_visual(
             manifest_path, 
             self.cfg.max_sample_size, 
             self.cfg.min_sample_size, 
             frame_rate=self.cfg.sample_rate, 
             label_paths=[label_path], 
-            label_rates=[self.label_rate]
+            label_rates=[self.label_rate],
+            path_prefix=self.data_path_prefix
         )
 
         # build data transformations
@@ -206,7 +208,14 @@ class AudioVideoDataset(FairseqDataset):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        pos = self.label_offsets_list[index]
+
+        with open(self.label_path) as f:
+            f.seek(pos[0])
+            label = f.read(pos[1] - pos[0])
+
+        label = self.bpe_tokenizer.encode(label)
+        label = self.dictionary.encode_line(label, add_if_not_exist=False).long()        
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -247,7 +256,31 @@ class AudioVideoDataset(FairseqDataset):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        if not os.path.exists(video_name):
+            raise FileNotFoundError(f"[ERROR] File not found: {video_name}")
+
+        video = cv2.VideoCapture(video_name)
+
+        if not video.isOpened():
+            raise RuntimeError(f"[ERROR] Failed to open video: {video_name}")
+        
+        frames = []
+        frame_idx = 0
+        while True:
+            ret, frame = video.read()
+            if not ret:
+                break
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frames.append(frame)
+            frame_idx += 1
+
+        if len(frames) == 0:
+            raise ValueError(f"[ERROR] No frames extracted from: {video_name}")
+
+        frames = np.stack(frames, axis=0)
+
+        feats = self.transform(frames)
+        feats = np.expand_dims(feats, axis=-1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -266,7 +299,13 @@ class AudioVideoDataset(FairseqDataset):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        sample_rate, audio = wavfile.read(audio_name)
+        audio = cupy.asarray(audio, dtype=cupy.float32)
+        audio_feats = logfbank(audio, samplerate=sample_rate)
+        audio_feats = cupy.asnumpy(audio_feats[0])
+        pad_size = self.stack_order_audio - (len(audio_feats) % self.stack_order_audio)
+        audio_feats = np.pad(audio_feats, ((0, pad_size), (0, 0)), "constant")
+        audio_feats = audio_feats.reshape(-1, self.stack_order_audio * audio_feats.shape[-1])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
