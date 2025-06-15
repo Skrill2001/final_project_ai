@@ -1,6 +1,6 @@
 # NOTE: use absolute path, modify according to your setting
-CHECKPOINT_PATH="path to your checkpoint"
-RESULT_PATH="path to the folder where you want to save results"
+CHECKPOINT_PATH="/cpfs02/user/housiyuan/project/final_project_ai/exp/exp_v2t/checkpoints/checkpoint_best.pt"
+RESULT_PATH="test_results"
 
 python -B inference.py --config-dir ./configs/ --config-name inference.yaml \
   dataset.gen_subset=test \

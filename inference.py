@@ -115,12 +115,15 @@ def main(cfg):
     saved_cfg = state["cfg"]
     default_config = AudioVideoModelConfig()
     saved_cfg.model = utils.merge_with_parent(default_config, saved_cfg.model)
+    saved_cfg.task.modalities = cfg.override.modalities
+    
     model = AudioVideoModel(saved_cfg.model, saved_cfg.task)
-    model.load_state_dict(state["model"], strict=True, model_cfg=saved_cfg.model)
+    missing_keys, unexpected_keys = model.load_state_dict(state["model"], strict=False, model_cfg=saved_cfg.model)
+    logger.info(f"[ERROR]: missing_keys: {missing_keys}, unexpected_keys: {unexpected_keys}")
+    
     model.eval().cuda()
     model.prepare_for_inference_(cfg)
 
-    saved_cfg.task.modalities = cfg.override.modalities
     logger.info(cfg)
 
     # Set dictionary
