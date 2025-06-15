@@ -212,7 +212,7 @@ class AudioEncoder(nn.Module):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.proj = nn.Linear(input_dim, output_dim)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -228,7 +228,9 @@ class AudioEncoder(nn.Module):
 
         # import pdb; pdb.set_trace()
 
-        pass
+        x = x.transpose(-1, -2)
+        x = self.proj(x)
+        x = x.transpose(-1, -2)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
