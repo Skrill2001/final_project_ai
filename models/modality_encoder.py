@@ -237,6 +237,11 @@ class AudioEncoder(nn.Module):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         self.proj = nn.Linear(input_dim, output_dim)
+        # self.proj = nn.Sequential(
+        #     nn.Linear(input_dim, output_dim),
+        #     nn.ReLU(),
+        #     nn.Linear(output_dim, output_dim)
+        # )
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################

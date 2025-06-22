@@ -8,3 +8,7 @@ final_project_conda_env.tar.gz
 __pycache__
 exp
 outputs
+final_project_ckpt
+final_project_data
+rzd_env
+code.zip
